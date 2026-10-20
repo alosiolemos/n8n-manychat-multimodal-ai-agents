@@ -1,0 +1,190 @@
+{
+  "name": "ManyChat IA — suporte — template público",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "plataforma"
+            },
+            {
+              "name": "nome"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "telefone"
+            },
+            {
+              "name": "mensagem_original"
+            },
+            {
+              "name": "resumo"
+            },
+            {
+              "name": "nivel_atrito"
+            },
+            {
+              "name": "id_conversa"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        784
+      ],
+      "id": "c149b5e2-97f7-4cee-af81-043232b3246d",
+      "name": "Receber Reclamação"
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $json.destinatario }}",
+        "subject": "={{ $json.assunto }}",
+        "bodyContent": "={{ $json.corpo_html }}",
+        "additionalFields": {
+          "bodyContentType": "html",
+          "replyTo": "={{ $json.email }}"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        784
+      ],
+      "id": "ea33e425-be91-4e1f-b904-0b3159edd255",
+      "name": "Enviar e-mail Outlook",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "CONFIGURE_ID_101",
+              "name": "envio_reclamacao",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "CONFIGURE_ID_102",
+              "name": "status",
+              "value": "enviado",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_103",
+              "name": "plataforma",
+              "value": "={{ $('Preparar Reclamação').item.json.plataforma }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_104",
+              "name": "destinatario",
+              "value": "={{ $('Preparar Reclamação').item.json.destinatario }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_105",
+              "name": "email_cliente",
+              "value": "={{ $('Preparar Reclamação').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_106",
+              "name": "id_conversa",
+              "value": "={{ $('Preparar Reclamação').item.json.id_conversa }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_107",
+              "name": "mensagem",
+              "value": "Reclamação enviada com sucesso ao time de suporte responsável.",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_108",
+              "name": "status",
+              "value": "={{\n(() => {\n  const success = $json.success === true;\n\n  const message = String(\n    $json.message ??\n    $json.mensagem ??\n    $json.output ??\n    ''\n  ).trim();\n\n  const temMensagem = message.length > 0;\n\n  const contemErro = /erro|error|falha|failed|failure/i.test(message);\n\n  return (success || (temMensagem && !contemErro))\n    ? 'enviado'\n    : 'erro';\n})()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_109",
+              "name": "envio_reclamacao",
+              "value": "={{\n(() => {\n  const success = $json.success === true;\n\n  const message = String(\n    $json.message ??\n    $json.mensagem ??\n    $json.output ??\n    ''\n  ).trim();\n\n  const temMensagem = message.length > 0;\n  const contemErro = /erro|error|falha|failed|failure/i.test(message);\n\n  return success || (temMensagem && !contemErro);\n})()\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        784
+      ],
+      "id": "9863cd04-0cbc-45e4-b187-86ae495783bb",
+      "name": "Retorno"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json;\n\n// --------------------------------------------------\n// 1. NORMALIZAÇÃO DA PLATAFORMA\n// --------------------------------------------------\nconst rawPlataforma = String(input.plataforma || '')\n  .trim()\n  .toUpperCase()\n  .replace(/\\s+/g, '_');\n\nlet plataforma;\nlet plataformaLabel;\nlet destinatario;\n\nconst plataformasPlataformaA = [\n  'PLATAFORMA_A_CO',\n  'PLATAFORMA_A.CO',\n  'PLATAFORMA_A',\n  'PLATAFORMA_ACO',\n  'NPS',\n  'CXM',\n  'PLATAFORMA_A_HEALTH'\n];\n\nconst plataformasPlataformaB = [\n  'PLATAFORMA_B',\n  'PLATAFORMA_B_XM',\n  'XM',\n  'HUB',\n  'PLATAFORMA_B_HUB',\n  'TOTEM'\n];\n\nif (plataformasPlataformaA.includes(rawPlataforma)) {\n  plataforma = 'PLATAFORMA_A_CO';\n  plataformaLabel = 'PlataformaA.co';\n\n  // TESTE\n  destinatario = 'contato@example.com';\n\n} else if (plataformasPlataformaB.includes(rawPlataforma)) {\n  plataforma = 'PLATAFORMA_B';\n  plataformaLabel = 'PLATAFORMA_B';\n\n  // TESTE\n  destinatario = 'contato@example.com';\n\n} else {\n  throw new Error(\n    `Plataforma não identificada: ${rawPlataforma || 'não informada'}. Informe PLATAFORMA_A_CO ou PLATAFORMA_B.`\n  );\n}\n\n// --------------------------------------------------\n// 2. NORMALIZAÇÃO DOS DADOS\n// --------------------------------------------------\nconst nome = String(input.nome || '').trim() || 'Cliente não identificado';\n\nconst email = String(input.email || '')\n  .trim()\n  .toLowerCase();\n\nconst telefone = String(input.telefone || '').trim() || 'Não informado';\n\nconst mensagemOriginal =\n  String(input.mensagem_original || '').trim() || 'Não informada';\n\nconst resumo =\n  String(input.resumo || '').trim() || mensagemOriginal;\n\nconst nivelAtrito =\n  String(input.nivel_atrito || '').trim().toLowerCase() || 'alto';\n\nconst idConversa =\n  String(input.id_conversa || '').trim() || 'Não informado';\n\n// Dados fixos do fluxo\nconst origem = 'WhatsApp do site';\nconst atendente = 'Assistente Demo';\nconst tipoAtendimento = 'Escalonamento de alto atrito';\n\n// --------------------------------------------------\n// 3. VALIDAÇÕES\n// --------------------------------------------------\nif (!email) {\n  throw new Error(\n    'E-mail do cliente não informado. Solicite o e-mail antes de escalar a reclamação.'\n  );\n}\n\nconst emailValido = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n\nif (!emailValido.test(email)) {\n  throw new Error(`E-mail do cliente inválido: ${email}`);\n}\n\nif (!resumo || resumo === 'Não informada') {\n  throw new Error('Resumo da reclamação não informado.');\n}\n\n// --------------------------------------------------\n// 4. ASSUNTO\n// --------------------------------------------------\nconst assunto =\n  `[ALTO ATRITO] ${plataformaLabel} | ${nome} | WhatsApp`;\n\n// --------------------------------------------------\n// 5. FUNÇÕES HTML\n// --------------------------------------------------\nconst esc = (value) => String(value ?? '')\n  .replace(/&/g, '&amp;')\n  .replace(/</g, '&lt;')\n  .replace(/>/g, '&gt;')\n  .replace(/\"/g, '&quot;')\n  .replace(/'/g, '&#039;');\n\nconst htmlText = (value) =>\n  esc(value).replace(/\\r?\\n/g, '<br>');\n\n// --------------------------------------------------\n// 6. CORPO DO E-MAIL\n// --------------------------------------------------\nconst corpo_html = `\n<table\n  width=\"100%\"\n  cellpadding=\"0\"\n  cellspacing=\"0\"\n  border=\"0\"\n  style=\"\n    width:100%;\n    background:#f5f6f8;\n    font-family:Arial,Helvetica,sans-serif;\n    color:#900018;\n  \"\n>\n  <tr>\n    <td align=\"center\" style=\"padding:24px;\">\n\n      <table\n        width=\"720\"\n        cellpadding=\"0\"\n        cellspacing=\"0\"\n        border=\"0\"\n        style=\"\n          width:100%;\n          max-width:720px;\n          background:#ffffff;\n          border:1px solid #e5e7eb;\n        \"\n      >\n\n        <!-- CABEÇALHO -->\n        <tr>\n          <td style=\"padding:24px 28px 18px 28px;border-bottom:1px solid #e5e7eb;\">\n\n            <div style=\"\n              font-size:12px;\n              font-weight:bold;\n              color:#b42318;\n              text-transform:uppercase;\n              margin-bottom:8px;\n            \">\n              Atendimento com alto atrito\n            </div>\n\n            <div style=\"\n              font-size:22px;\n              font-weight:bold;\n              color:#900019;\n              line-height:1.3;\n            \">\n              ${esc(nome)} | ${esc(plataformaLabel)}\n            </div>\n\n            <div style=\"\n              margin-top:8px;\n              font-size:13px;\n              color:#900020;\n            \">\n              Origem: ${esc(origem)} • Atendimento: ${esc(atendente)}\n            </div>\n\n          </td>\n        </tr>\n\n\n        <!-- RESUMO EXECUTIVO -->\n        <tr>\n          <td style=\"padding:24px 28px 10px 28px;\">\n\n            <div style=\"\n              font-size:15px;\n              font-weight:bold;\n              color:#900019;\n              margin-bottom:10px;\n            \">\n              Resumo rápido\n            </div>\n\n            <table\n              width=\"100%\"\n              cellpadding=\"0\"\n              cellspacing=\"0\"\n              border=\"0\"\n              style=\"\n                background:#f9fafb;\n                border-left:4px solid #b42318;\n              \"\n            >\n              <tr>\n                <td style=\"\n                  padding:16px 18px;\n                  font-size:14px;\n                  line-height:1.6;\n                  color:#900021;\n                \">\n                  <strong>${esc(nome)}</strong> apresenta uma situação de\n                  <strong>alto atrito</strong> relacionada à plataforma\n                  <strong>${esc(plataformaLabel)}</strong>.\n\n                  <br><br>\n\n                  ${htmlText(resumo)}\n                </td>\n              </tr>\n            </table>\n\n          </td>\n        </tr>\n\n\n        <!-- DADOS -->\n        <tr>\n          <td style=\"padding:18px 28px;\">\n\n            <div style=\"\n              font-size:15px;\n              font-weight:bold;\n              color:#900019;\n              margin-bottom:12px;\n            \">\n              Dados do atendimento\n            </div>\n\n            <table\n              width=\"100%\"\n              cellpadding=\"8\"\n              cellspacing=\"0\"\n              border=\"0\"\n              style=\"\n                font-size:14px;\n                border-collapse:collapse;\n              \"\n            >\n\n              <tr>\n                <td width=\"190\" style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  Cliente\n                </td>\n                <td style=\"font-weight:bold;border-bottom:1px solid #eeeeee;\">\n                  ${esc(nome)}\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  Plataforma\n                </td>\n                <td style=\"font-weight:bold;border-bottom:1px solid #eeeeee;\">\n                  ${esc(plataformaLabel)}\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  E-mail\n                </td>\n                <td style=\"border-bottom:1px solid #eeeeee;\">\n                  <a\n                    href=\"mailto:${esc(email)}\"\n                    style=\"color:#175cd3;text-decoration:none;\"\n                  >\n                    ${esc(email)}\n                  </a>\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  Telefone / WhatsApp\n                </td>\n                <td style=\"border-bottom:1px solid #eeeeee;\">\n                  ${esc(telefone)}\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  Nível de atrito\n                </td>\n                <td style=\"border-bottom:1px solid #eeeeee;\">\n                  <strong style=\"color:#b42318;\">\n                    ${esc(nivelAtrito.toUpperCase())}\n                  </strong>\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;border-bottom:1px solid #eeeeee;\">\n                  Origem\n                </td>\n                <td style=\"border-bottom:1px solid #eeeeee;\">\n                  ${esc(origem)}\n                </td>\n              </tr>\n\n              <tr>\n                <td style=\"color:#900020;\">\n                  ID da conversa\n                </td>\n                <td>\n                  ${esc(idConversa)}\n                </td>\n              </tr>\n\n            </table>\n\n          </td>\n        </tr>\n\n\n        <!-- MENSAGEM DO CLIENTE -->\n        <tr>\n          <td style=\"padding:10px 28px 24px 28px;\">\n\n            <div style=\"\n              font-size:15px;\n              font-weight:bold;\n              color:#900019;\n              margin-bottom:10px;\n            \">\n              Mensagem que originou o escalonamento\n            </div>\n\n            <table\n              width=\"100%\"\n              cellpadding=\"0\"\n              cellspacing=\"0\"\n              border=\"0\"\n              style=\"\n                background:#fff8f6;\n                border:1px solid #fecdca;\n              \"\n            >\n              <tr>\n                <td style=\"\n                  padding:16px 18px;\n                  font-size:14px;\n                  line-height:1.6;\n                  color:#900021;\n                  font-style:italic;\n                \">\n                  “${htmlText(mensagemOriginal)}”\n                </td>\n              </tr>\n            </table>\n\n          </td>\n        </tr>\n\n\n        <!-- AÇÃO -->\n        <tr>\n          <td style=\"\n            padding:20px 28px;\n            background:#f9fafb;\n            border-top:1px solid #e5e7eb;\n          \">\n\n            <div style=\"\n              font-size:14px;\n              font-weight:bold;\n              color:#900019;\n              margin-bottom:6px;\n            \">\n              Ação esperada\n            </div>\n\n            <div style=\"\n              font-size:13px;\n              line-height:1.6;\n              color:#900022;\n            \">\n              Avaliar o contexto apresentado e realizar a tratativa com o cliente\n              conforme o fluxo de suporte da ${esc(plataformaLabel)}.\n            </div>\n\n          </td>\n        </tr>\n\n\n        <!-- RODAPÉ -->\n        <tr>\n          <td style=\"\n            padding:16px 28px;\n            font-size:11px;\n            color:#98a2b3;\n            border-top:1px solid #e5e7eb;\n          \">\n            Origem: ${esc(origem)} • ${esc(tipoAtendimento)}<br>\n            Atendimento automatizado por Assistente Demo • ID ${esc(idConversa)}\n          </td>\n        </tr>\n\n      </table>\n\n    </td>\n  </tr>\n</table>\n`;\n\n// --------------------------------------------------\n// 7. SAÍDA\n// --------------------------------------------------\nreturn [\n  {\n    json: {\n      plataforma,\n      plataforma_label: plataformaLabel,\n      destinatario,\n      nome,\n      email,\n      telefone,\n      mensagem_original: mensagemOriginal,\n      resumo,\n      nivel_atrito: nivelAtrito,\n      origem,\n      id_conversa: idConversa,\n      assunto,\n      corpo_html\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        784
+      ],
+      "id": "664ff3db-b333-4dcf-b543-bcf235a41a60",
+      "name": "Preparar Reclamação"
+    }
+  ],
+  "connections": {
+    "Receber Reclamação": {
+      "main": [
+        [
+          {
+            "node": "Preparar Reclamação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar e-mail Outlook": {
+      "main": [
+        [
+          {
+            "node": "Retorno",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Reclamação": {
+      "main": [
+        [
+          {
+            "node": "Enviar e-mail Outlook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

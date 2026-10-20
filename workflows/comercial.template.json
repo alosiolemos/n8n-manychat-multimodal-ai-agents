@@ -1,0 +1,1229 @@
+{
+  "name": "ManyChat IA — comercial — template público",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "nome"
+            },
+            {
+              "name": "sobrenome"
+            },
+            {
+              "name": "email"
+            },
+            {
+              "name": "telefone"
+            },
+            {
+              "name": "empresa"
+            },
+            {
+              "name": "cargo"
+            },
+            {
+              "name": "motivo_contato"
+            },
+            {
+              "name": "interesse"
+            },
+            {
+              "name": "id_conversa"
+            },
+            {
+              "name": "user"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        -48
+      ],
+      "id": "5964f070-92ae-4530-90c4-289487ef085d",
+      "name": "Receber Lead Comercial"
+    },
+    {
+      "parameters": {
+        "url": "https://api.pipedrive.com/v1/users",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        768,
+        416
+      ],
+      "id": "d69cf20a-cbed-4ec1-a2d5-c4a2ca4f8d49",
+      "name": "Obter usuários",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const leads = $('Lista todos os leads').item.json.data;\nconst usuarios = $('Obter usuários').item.json.data;\n\n// cria mapa de usuários\nconst userMap = {};\nusuarios.forEach(user => {\n  userMap[user.id] = {\n    owner_name: user.name,\n    owner_email: user.email\n  };\n});\n\n// aplica filtro\nconst filtrados = leads.filter(lead =>\n  (lead.source_name || '') !== 'Manually created' &&\n  (lead.origin || '') !== 'ManuallyCreated'\n);\n\n// limpa e cruza os dados\nconst resultado = filtrados.map(lead => ({\n  add_time: lead.add_time,\n  owner_name: userMap[lead.owner_id]?.owner_name || null,\n  owner_email: userMap[lead.owner_id]?.owner_email || null,\n  id: lead.id,\n  title: lead.title,\n  owner_id: lead.owner_id,\n  source_name: lead.source_name\n}));\n\nreturn [\n  {\n    json: {\n      body: resultado\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        416
+      ],
+      "id": "ddcb6c19-f2aa-4c1f-a6e2-78bf30ff9f04",
+      "name": "Listar Leads API e Cruzar Usuários",
+      "executeOnce": false,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.dados?.Mensagem_geral || $json.Mensagem_geral || JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "Etapa histórica de demonstração para sugerir responsável comercial a partir dos dados recebidos. Não invente IDs nem atribua responsáveis fora da lista configurada. Esta etapa permanece desabilitada e depende de revisão antes de uso."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        1216,
+        416
+      ],
+      "id": "b6be4cde-97d9-4aa6-bebd-ada95c61ddc6",
+      "name": "Definir Owner",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        432
+      ],
+      "id": "e0d7b2f9-6c2c-4f7c-af9a-a010940e3185",
+      "name": "Google Gemini Chat Model",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://api.pipedrive.com/v1/leads?limit=60&sort=add_time%20desc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        576,
+        416
+      ],
+      "id": "5c9c30e2-b543-4476-8c3c-44008b1e6788",
+      "name": "Lista todos os leads",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "CONFIGURE_ID_119",
+              "name": "body.nome",
+              "value": "={{ $json.nome }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_120",
+              "name": "body[\"nome e sobrenome\"]",
+              "value": "={{ $json.sobrenome }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_121",
+              "name": "body.sobrenome",
+              "value": "={{ $json.sobrenome }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_122",
+              "name": "body.email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_123",
+              "name": "body.telefone",
+              "value": "={{ $json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_124",
+              "name": "body.celular",
+              "value": "={{ $json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_125",
+              "name": "body.Cargo",
+              "value": "={{ $json.cargo }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_126",
+              "name": "body.nome_empresa",
+              "value": "={{ $json.empresa }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_127",
+              "name": "body.identificacao_evento",
+              "value": "=Chat",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_128",
+              "name": "body.interesse",
+              "value": "={{ $json.interesse }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_129",
+              "name": "body.motivo_contato",
+              "value": "={{ $json.motivo_contato }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_130",
+              "name": "body.id_rd",
+              "value": "={{ $json.id_conversa }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_131",
+              "name": "body.event_type",
+              "value": "=Chat",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_132",
+              "name": "body.event_identifier",
+              "value": "=Chat",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_133",
+              "name": "body.Canal",
+              "value": "=Whatsapp PlataformaA",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_134",
+              "name": "body.Origem_lead",
+              "value": "Fusão PLATAFORMA_B x PlataformaA",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_135",
+              "name": "body.Origem_Lead_id",
+              "value": "=325",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_136",
+              "name": "body.origin_channel",
+              "value": "=Site",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_137",
+              "name": "body.origin_medium",
+              "value": "=Site",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_138",
+              "name": "body.origin_source",
+              "value": "=Site",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_139",
+              "name": "body.leads_uuid",
+              "value": "=user:{{ $json.id_conversa }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_140",
+              "name": "body.canal_id_lead_canal_n_usar",
+              "value": "=364",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_141",
+              "name": "body[\"user-agent\"]",
+              "value": "=ManyChat",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_142",
+              "name": "body.uuid",
+              "value": "={{ $json.id_conversa }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_143",
+              "name": "body.APOLLO TOKEN",
+              "value": "iB6T5PRj8tPv6fjWcZeTbA",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        -208
+      ],
+      "id": "1d8e23d9-ef0d-45be-9ad6-a79c1d5133f4",
+      "name": "Consolidado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('TIPO DE E-MAIL').first().json.classificacao }}",
+              "operation": "notEndsWith",
+              "value2": "Domínio Pessoal"
+            }
+          ]
+        },
+        "combineOperation": "any"
+      },
+      "id": "b07e12da-5965-4f6c-a6ae-c7471c3c713a",
+      "name": "VALIDAR TIPO DE E-MAIL2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        160,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "organization",
+        "name": "={{ $('Consolidado').first().json.body.nome_empresa }}",
+        "additionalFields": {
+          "customProperties": {
+            "property": [
+              {
+                "name": "=owner_id",
+                "value": "={{ 900027 }}"
+              },
+              {
+                "name": "CONFIGURE_ID_146",
+                "value": "Inbound"
+              },
+              {
+                "name": "=CONFIGURE_ID_147",
+                "value": "={{ $('Consolidado').first().json.body.Canal }}"
+              },
+              {
+                "name": "=CONFIGURE_ID_148",
+                "value": "={{ $('Consolidado').first().json.body.email.split('@')[1] }}"
+              },
+              {
+                "name": "website",
+                "value": "={{ $('Consolidado').first().json.body.email.split('@')[1] }}"
+              },
+              {
+                "name": "CONFIGURE_ID_148",
+                "value": "={{ $json.person.organization.website_url }}"
+              },
+              {
+                "name": "linkedin",
+                "value": "={{ $json.person.organization.linkedin_url }}"
+              },
+              {
+                "name": "employee_count",
+                "value": "={{ $json.person.organization.estimated_num_employees }}"
+              }
+            ]
+          },
+          "label": 151,
+          "visible_to": "3"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -192
+      ],
+      "id": "361cba47-7293-40c5-ab51-c58057686079",
+      "name": "Criar organização",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "name": "={{ $('Consolidado').item.json.body.nome }} {{ $('Consolidado').item.json.body.sobrenome }}",
+        "additionalFields": {
+          "customProperties": {
+            "property": [
+              {
+                "name": "CONFIGURE_ID_150",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              },
+              {
+                "name": "CONFIGURE_ID_151",
+                "value": "={{ $('Consolidado').first().json.body.id_rd }}"
+              },
+              {
+                "name": "CONFIGURE_ID_152",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              },
+              {
+                "name": "CONFIGURE_ID_152",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              },
+              {
+                "name": "CONFIGURE_ID_153",
+                "value": "={{ $('Buscar o contato').item.json.person.linkedin_url }}"
+              }
+            ]
+          },
+          "email": [
+            "={{ $('Consolidado').first().json.body.email }}"
+          ],
+          "label": 7,
+          "marketing_status": "subscribed",
+          "org_id": "={{ $json.id }}",
+          "phone": [
+            "={{\n[\n  $('Consolidado').first().json.body.celular,\n  $('Consolidado').first().json.body.telefone\n]\n.find(v => v && String(v).replace(/\\D/g,'').trim() !== '')\n}}"
+          ],
+          "visible_to": "3",
+          "owner_id": "={{ 900027 }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        560,
+        -192
+      ],
+      "id": "8c87af64-8bd1-4741-8110-dc65733a77f8",
+      "name": "Criar pessoa",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pipedrive.com/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{ $('Criar organização').first().json.name }}\",\n  \"owner_id\": {{ 900027 }},\n  \"label_ids\": [\n    \"CONFIGURE_ID_155\"\n  ],\n  \"person_id\": {{ $json.id }},\n  \"organization_id\": {{ $('Criar organização').first().json.id }},\n  \"channel\": 415,\n  \"channel_id\": \"415\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        752,
+        -192
+      ],
+      "id": "9b235ad9-a34d-4c1a-b6aa-885b08b6008d",
+      "name": "Criar Lead2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.pipedrive.com/v1/leads/{{ $json.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"CONFIGURE_ID_157\": [261],\n  \"CONFIGURE_ID_158\":{{ $('Consolidado').first().json.body.canal_id_lead_canal_n_usar }}, \n  \"CONFIGURE_ID_159\": 137,\n  \"CONFIGURE_ID_160\": 135,\n  \"CONFIGURE_ID_161\":{{ $('Consolidado').first().json.body.Origem_Lead_id }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        944,
+        -192
+      ],
+      "id": "f6044bb0-6d60-4eea-93fb-29e6875b95c3",
+      "name": "Update Lead2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.pipedrive.com/v1/leads/{{ $json.data.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"CONFIGURE_ID_157\": [261],\n  \"CONFIGURE_ID_158\":{{ $('Consolidado').first().json.body.canal_id_lead_canal_n_usar }}, \n  \"CONFIGURE_ID_159\": 137,\n  \"CONFIGURE_ID_160\": 135,\n  \"CONFIGURE_ID_161\":{{ $('Consolidado').first().json.body.Origem_Lead_id }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        752,
+        64
+      ],
+      "id": "a9cef3ec-cd66-4778-910f-d27d7d6bf478",
+      "name": "Update Lead3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "person",
+        "name": "={{ $('Consolidado').first().json.body.nome }}",
+        "additionalFields": {
+          "customProperties": {
+            "property": [
+              {
+                "name": "CONFIGURE_ID_150",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              },
+              {
+                "name": "CONFIGURE_ID_151",
+                "value": "={{ $('Consolidado').first().json.body.id_rd }}"
+              },
+              {
+                "name": "CONFIGURE_ID_152",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              },
+              {
+                "name": "CONFIGURE_ID_152",
+                "value": "={{ $('Consolidado').first().json.body.Cargo ?? \"Outros\"}}"
+              }
+            ]
+          },
+          "email": [
+            "={{ $('Consolidado').first().json.body.email }}"
+          ],
+          "label": 7,
+          "marketing_status": "subscribed",
+          "phone": [
+            "={{\n[\n  $('Consolidado').first().json.body.celular,\n  $('Consolidado').first().json.body.telefone\n]\n.find(v => v && String(v).replace(/\\D/g,'').trim() !== '')\n}}"
+          ],
+          "visible_to": "3",
+          "owner_id": "={{ 900027 }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        368,
+        64
+      ],
+      "id": "ffdc811b-77d0-429e-8e25-f7115d5137b3",
+      "name": "Criar pessoa1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.pipedrive.com/v1/leads",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-token",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"title\": \"{{$('Consolidado').first().json.body.nome_empresa ||$('Consolidado').item.json.body[\"nome e sobrenome\"] }}\",\n  \"owner_id\": {{ 900027 }},\n  \"label_ids\": [\n    \"CONFIGURE_ID_155\"\n  ],\n  \"person_id\": {{ $json.id }},\n  \"channel\": 417,\n  \"channel_id\": \"417\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        560,
+        64
+      ],
+      "id": "6a166c80-d9f3-454a-a700-9374bc749444",
+      "name": "Criar Lead4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "note",
+        "content": "=<b><i>OUTRAS INFORMAÇÕES</i></b><br><br>\n\n<b><i>Observação:</i></b><br>\n{{ $('Consolidado').first().json.body.Mensagem }}<br><br>\n\n<b><i>Nome e Sobrenome:</i></b><br>\n{{ $('Consolidado').first().json.body['nome e sobrenome'] }}<br><br>\n\n<b><i>Origem do contato:</i></b><br>\n{{ $('Consolidado').first().json.body.Canal }} - {{ $('Consolidado').first().json.body.Origem_lead }}<br><br>\n\n<b><i>Nome da empresa e ID criado:</i></b><br> {{ $('Consolidado').first().json.body.nome_empresa }}\n<br><br>",
+        "additionalFields": {
+          "lead_id": "={{ $('Criar Lead4').first().json.data.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        944,
+        64
+      ],
+      "id": "38f8593a-510b-454b-b20b-54970c746c04",
+      "name": "Add Note Lead1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "note",
+        "content": "=<b><i>OUTRAS INFORMAÇÕES</i></b><br><br>\n\n<b><i>Motivo do contato:</i></b><br>\n{{ $('Consolidado').item.json.body.motivo_contato }}<br><br>\n\n<b><i>Interesse Identificado:</i></b><br>\n{{ $('Consolidado').item.json.body.interesse }}<br><br>\n\n<b><i>Nome e Sobrenome:</i></b><br>\n{{ $('Consolidado').item.json.body.nome }} {{ $('Consolidado').item.json.body.sobrenome }}<br><br>\n\n<b><i>Origem do contato:</i></b><br>\n{{ $('Consolidado').first().json.body.Canal }} - {{ $('Consolidado').first().json.body.Origem_lead }}<br><br>\n\n<b><i>Nome da empresa e ID criado:</i></b><br> {{ $('Consolidado').first().json.body.nome_empresa }}\n<br><br>\n\n\n",
+        "additionalFields": {
+          "lead_id": "={{ $('Criar Lead2').first().json.data.id }}",
+          "person_id": "={{ $('Criar pessoa').first().json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.pipedrive",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        -192
+      ],
+      "id": "f1dec8b1-fec5-40ca-a3a9-a4c1b2ee29f8",
+      "name": "Add Note Lead",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pegamos o e-mail da entrada\nconst email = ($('Consolidado').first().json.body?.email || \"\").trim().toLowerCase();\n\n// Domínios pessoais\nconst personalDomains = new Set([\n  // Google\n  \"gmail.com\",\n  \"googlemail.com\",\n\n  // Microsoft\n  \"hotmail.com\",\n  \"hotmail.com.br\",\n  \"hotmail.co.uk\",\n  \"hotmail.fr\",\n  \"outlook.com\",\n  \"outlook.com.br\",\n  \"live.com\",\n  \"live.com.br\",\n  \"msn.com\",\n\n  // Yahoo\n  \"yahoo.com\",\n  \"yahoo.com.br\",\n  \"ymail.com\",\n  \"rocketmail.com\",\n\n  // Apple\n  \"icloud.com\",\n  \"me.com\",\n  \"mac.com\",\n\n  // AOL\n  \"aol.com\",\n\n  // Proton\n  \"protonmail.com\",\n  \"proton.me\",\n\n  // Zoho\n  \"zoho.com\",\n  \"zohomail.com\",\n\n  // GMX\n  \"gmx.com\",\n  \"gmx.net\",\n\n  // Mail.com\n  \"mail.com\",\n\n  // Fastmail\n  \"fastmail.com\",\n  \"fastmail.fm\",\n\n  // Tuta\n  \"tuta.com\",\n  \"tutanota.com\",\n  \"tutanota.de\",\n\n  // Mailfence\n  \"mailfence.com\",\n\n  // Yandex\n  \"yandex.com\",\n  \"yandex.ru\",\n\n  // Mail.ru\n  \"mail.ru\",\n  \"bk.ru\",\n  \"inbox.ru\",\n  \"list.ru\",\n\n  // Naver\n  \"naver.com\",\n\n  // QQ\n  \"qq.com\",\n\n  // NetEase\n  \"163.com\",\n  \"126.com\",\n\n  // Brasil\n  \"uol.com.br\",\n  \"bol.com.br\",\n  \"terra.com.br\",\n  \"ig.com.br\",\n  \"globo.com\",\n  \"oi.com.br\",\n\n  // Outros\n  \"rediffmail.com\",\n  \"web.de\",\n  \"email.com\",\n  \"posteo.de\",\n  \"hey.com\"\n]);\n\n// Domínios temporários\nconst disposableDomains = new Set([\n  \"mailinator.com\",\n  \"tempmail.com\",\n  \"10minutemail.com\",\n  \"guerrillamail.com\",\n  \"sharklasers.com\",\n  \"yopmail.com\",\n  \"temp-mail.org\",\n  \"dispostable.com\",\n  \"getnada.com\",\n  \"maildrop.cc\"\n]);\n\nfunction getDomain(email) {\n  const index = email.lastIndexOf(\"@\");\n  return index > -1 ? email.substring(index + 1) : \"\";\n}\n\nconst domain = getDomain(email);\n\nlet classificacao = \"Domínio Corporativo\";\n\nif (!domain) {\n  classificacao = \"E-mail inválido\";\n} else if (disposableDomains.has(domain)) {\n  classificacao = \"Domínio Temporário\";\n} else if (personalDomains.has(domain)) {\n  classificacao = \"Domínio Pessoal\";\n}\n\nreturn {\n  email,\n  dominio: domain,\n  classificacao\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        80
+      ],
+      "id": "e336ffdc-4c41-475b-adcc-26685dc90758",
+      "name": "TIPO DE E-MAIL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apollo.io/api/v1/organizations/enrich?domain={{ $('TIPO DE E-MAIL').item.json.dominio }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "=iB6T5PRj8tPv6fjWcZeTbA"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d810c013-bb1c-4228-8987-ca0e3366e877",
+      "name": "Buscar a Empresa",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -64,
+        -64
+      ],
+      "continueOnFail": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apollo.io/v1/people/match",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "api_key",
+              "value": "={{ $('Consolidado').item.json.body[\"APOLLO TOKEN\"] }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $('Consolidado').item.json.body.nome }} {{ $('Consolidado').item.json.body.sobrenome }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $('Consolidado').item.json.body.email }}"
+            },
+            {
+              "name": "domain",
+              "value": "={{ $('TIPO DE E-MAIL').item.json.dominio }}"
+            },
+            {
+              "name": "organization_name",
+              "value": "={{ $('Consolidado').item.json.body.nome_empresa }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "38b3daa6-7262-4f93-8494-dc8d0e6eaf39",
+      "name": "Buscar o contato",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -64,
+        64
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.apollo.io/api/v1/mixed_companies/search?organization_locations[]=Brasil&q_organization_keyword_tags[]=&q_organization_name={{ $('Consolidado').item.json.body.nome_empresa }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "x-api-key",
+              "value": "={{ $('Consolidado').item.json.body[\"APOLLO TOKEN\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dad47d22-071c-4d48-b4e2-af0e17cca9aa",
+      "name": "Buscar a Empresa1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -64,
+        -192
+      ],
+      "alwaysOutputData": true,
+      "continueOnFail": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "CONFIGURE_ID_172",
+              "name": "data.status_chat",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_173",
+              "name": "data.status_crm",
+              "value": "={{ $('Update').item.json.success }}",
+              "type": "boolean"
+            },
+            {
+              "id": "CONFIGURE_ID_174",
+              "name": "data.Owner",
+              "value": "=Natiely Bosco",
+              "type": "string"
+            },
+            {
+              "id": "CONFIGURE_ID_175",
+              "name": "data.created",
+              "value": "={{ $('Update').item.json.add_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        -64
+      ],
+      "id": "bf84d58e-292c-4b43-b6b4-c09e990e158e",
+      "name": "Edit Fields",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/subscriber/setCustomFields",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"subscriber_id\":{{ $('Consolidado').item.json.body.uuid }},\n  \"fields\": [\n    {\n      \"field_id\": 900029,\n      \"field_name\": \"lead_criado_pipedrive\",\n      \"field_value\": \"{{ $json.lead_criado_pipedrive }}\"\n    },\n    {\n      \"field_id\": 900007,\n      \"field_name\": \"status_conversa\",\n      \"field_value\": \"conversa_comercial_finalizada\"\n    },\n    {\n      \"field_id\": 900030,\n      \"field_name\": \"responsavel_lead\",\n      \"field_value\": \"Natiely Bosco\"\n    },\n    {\n      \"field_id\": 900015,\n      \"field_name\": \"data_final_conversa_comercial\",\n      \"field_value\": \"{{ new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().replace(/\\.\\d{3}Z$/, '-03:00') }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "d2fdcbb1-075a-44be-8477-aa77cb443f43",
+      "name": "update_ManyChat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1312,
+        -64
+      ],
+      "alwaysOutputData": true,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.manychat.com/fb/sending/sendContent",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "CONFIGURE_SECRET_PRIVATELY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"subscriber_id\": \"{{ $('Consolidado').item.json.body.uuid }}\",\n  \"data\": {\n    \"version\": \"v2\",\n    \"content\": {\n      \"type\": \"whatsapp\",\n      \"messages\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"Ok! Já tenho todas as informações que preciso. 😊\\n\\nSó um instante enquanto registro sua solicitação com nosso time comercial.\"\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "ad57845c-3391-436b-afb5-d776efafc07f",
+      "name": "Enviar mensagem ManyChat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -336,
+        -64
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "let lead = null;\nlet origem = '';\n\nif ($('Criar Lead2').isExecuted) {\n  lead = $('Criar Lead2').first().json;\n  origem = 'Criar Lead2';\n}\n\nif (!lead && $('Criar Lead4').isExecuted) {\n  lead = $('Criar Lead4').first().json;\n  origem = 'Criar Lead4';\n}\n\nconst leadId = lead?.data?.id || '';\nconst addTimeOriginal = lead?.data?.add_time || '';\n\nconst addTime = addTimeOriginal\n  ? DateTime\n      .fromISO(addTimeOriginal)\n      .setZone('America/Sao_Paulo')\n      .toFormat('dd/MM/yyyy HH:mm')\n  : '';\n\nconst success =\n  lead?.success === true ||\n  Boolean(leadId);\n\nreturn [\n  {\n    json: {\n      success,\n      lead_id: leadId,\n      add_time: addTime,\n      lead_criado_pipedrive: `${success} - ${leadId}`,\n      origem\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        64
+      ],
+      "id": "7afb9869-a64e-41a6-b0f4-2e9fc598ca7d",
+      "name": "Update"
+    },
+    {
+      "parameters": {
+        "content": "## comercial — bloco 1\nTemplate público inativo. Integrações e agendamentos desabilitados. Consulte a documentação antes de configurar.",
+        "height": 320,
+        "width": 1184,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        304
+      ],
+      "id": "f4fa232c-3de6-434c-b04c-52de0f0993e7",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## comercial — bloco 2\nTemplate público inativo. Integrações e agendamentos desabilitados. Consulte a documentação antes de configurar.",
+        "height": 560,
+        "width": 2384,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        -304
+      ],
+      "id": "8411f79b-f924-4e71-8e53-29de8a5aeeae",
+      "name": "Sticky Note1"
+    }
+  ],
+  "connections": {
+    "Obter usuários": {
+      "main": [
+        [
+          {
+            "node": "Listar Leads API e Cruzar Usuários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar Leads API e Cruzar Usuários": {
+      "main": [
+        [
+          {
+            "node": "Definir Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Definir Owner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista todos os leads": {
+      "main": [
+        [
+          {
+            "node": "Obter usuários",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receber Lead Comercial": {
+      "main": [
+        [
+          {
+            "node": "Consolidado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolidado": {
+      "main": [
+        [
+          {
+            "node": "Enviar mensagem ManyChat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Definir Owner": {
+      "main": [
+        []
+      ]
+    },
+    "VALIDAR TIPO DE E-MAIL2": {
+      "main": [
+        [
+          {
+            "node": "Criar organização",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Criar pessoa1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar organização": {
+      "main": [
+        [
+          {
+            "node": "Criar pessoa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar pessoa": {
+      "main": [
+        [
+          {
+            "node": "Criar Lead2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Lead2": {
+      "main": [
+        [
+          {
+            "node": "Update Lead2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead2": {
+      "main": [
+        [
+          {
+            "node": "Add Note Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead3": {
+      "main": [
+        [
+          {
+            "node": "Add Note Lead1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar pessoa1": {
+      "main": [
+        [
+          {
+            "node": "Criar Lead4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Lead4": {
+      "main": [
+        [
+          {
+            "node": "Update Lead3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note Lead1": {
+      "main": [
+        [
+          {
+            "node": "Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note Lead": {
+      "main": [
+        [
+          {
+            "node": "Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TIPO DE E-MAIL": {
+      "main": [
+        [
+          {
+            "node": "Buscar a Empresa1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar a Empresa": {
+      "main": [
+        [
+          {
+            "node": "Buscar o contato",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar a Empresa1": {
+      "main": [
+        [
+          {
+            "node": "Buscar a Empresa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar o contato": {
+      "main": [
+        [
+          {
+            "node": "VALIDAR TIPO DE E-MAIL2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "update_ManyChat": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar mensagem ManyChat": {
+      "main": [
+        [
+          {
+            "node": "TIPO DE E-MAIL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update": {
+      "main": [
+        [
+          {
+            "node": "update_ManyChat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

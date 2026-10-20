@@ -1,0 +1,70 @@
+{
+  "escopo": "Testes locais de JavaScript, JSON e SQL como texto; sem n8n, banco, APIs ou LLMs",
+  "total": 16,
+  "testes": [
+    {
+      "teste": "Sintaxe dos oito corpos JavaScript",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Normalização de entrada preserva ID e limpa mensagem",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Entrada sem contato ou sem mensagem é rejeitada",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Consolidação reúne mensagens válidas e recompõe saída",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Retomada filtra inativos e remove contatos repetidos",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Retomada rejeita status desconhecido após correção pública",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Retomada respeita opt-in, limite de tentativas e conversa finalizada",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Retomada não antecipa janela de quarenta minutos",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Classificação de domínio pessoal, temporário e corporativo",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Cruzamento de leads com responsáveis e exclusão de criação manual",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Retorno CRM preserva ID e sinaliza criação",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Suporte histórico valida e-mail e escapa HTML da reclamação",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Estrutura pública: principal",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Estrutura pública: suporte",
+      "resultado": "passou"
+    },
+    {
+      "teste": "Estrutura pública: comercial",
+      "resultado": "passou"
+    },
+    {
+      "teste": "SQLs de buffer usam parâmetros e corte temporal",
+      "resultado": "passou"
+    }
+  ]
+}

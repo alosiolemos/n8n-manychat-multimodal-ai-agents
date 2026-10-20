@@ -1,0 +1,55 @@
+[
+  {
+    "variant": "principal",
+    "total": 61,
+    "disabled": 32,
+    "codes": [
+      {
+        "name": "Normalizar contatos",
+        "path": "code/principal/01-normalizar-contatos.js"
+      },
+      {
+        "name": "Normalizar entrada",
+        "path": "code/principal/02-normalizar-entrada.js"
+      },
+      {
+        "name": "Consolidar mensagens",
+        "path": "code/principal/03-consolidar-mensagens.js"
+      },
+      {
+        "name": "SAIDA PARA SUPERVISOR",
+        "path": "code/principal/04-saida-para-supervisor.js"
+      }
+    ]
+  },
+  {
+    "variant": "suporte",
+    "total": 4,
+    "disabled": 1,
+    "codes": [
+      {
+        "name": "Preparar Reclamação",
+        "path": "code/suporte/01-preparar-reclamacao.js"
+      }
+    ]
+  },
+  {
+    "variant": "comercial",
+    "total": 27,
+    "disabled": 19,
+    "codes": [
+      {
+        "name": "Listar Leads API e Cruzar Usuários",
+        "path": "code/comercial/01-listar-leads-api-e-cruzar-usuarios.js"
+      },
+      {
+        "name": "TIPO DE E-MAIL",
+        "path": "code/comercial/02-tipo-de-e-mail.js"
+      },
+      {
+        "name": "Update",
+        "path": "code/comercial/03-update.js"
+      }
+    ]
+  }
+]
